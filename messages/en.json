@@ -167,19 +167,260 @@
     }
   },
   "demo": {
+    "tabs": {
+      "bins": "Bins",
+      "items": "Items",
+      "online": "Online",
+      "options": "Options"
+    },
+    "containers": "Containers",
     "container": "Container",
+    "containerType": "Container Type",
+    "containerTypes": {
+      "box": "Box",
+      "pallet": "Pallet",
+      "container": "Container",
+      "truck": "Truck",
+      "shelf": "Shelf",
+      "custom": "Custom"
+    },
+    "presetSizes": "Preset Sizes",
+    "selectPreset": "Select preset",
+    "maxWeight": "Max Weight",
+    "cost": "Cost",
+    "advancedOptions": "Advanced",
+    "bins": {
+      "excludeZones": "Exclude Zones",
+      "irregularPresets": "Irregular shapes"
+    },
     "algorithm": "Algorithm",
+    "strategy": "Strategy",
+    "algorithms": {
+      "extremePoint": {
+        "name": "Extreme Point",
+        "description": "Fast greedy algorithm. Good balance of speed and quality."
+      },
+      "layerBuilding": {
+        "name": "Layer Building",
+        "description": "Builds horizontal layers. Best for pallet loading."
+      },
+      "wallBuilding": {
+        "name": "Wall Building",
+        "description": "Builds vertical walls. Ideal for LIFO container loading."
+      },
+      "ebAfit": {
+        "name": "EB-AFIT",
+        "description": "Enhanced adaptive fit. Better space utilization."
+      }
+    },
+    "binSelection": "Bin Selection",
+    "binSelections": {
+      "firstFit": "First Fit",
+      "bestFit": "Best Fit",
+      "spread": "Spread (Balance load)"
+    },
+    "preprocessor": "Preprocessor",
+    "preprocessors": {
+      "none": "None",
+      "blockBuilding": "Block Building"
+    },
+    "enhancer": "Enhancer",
+    "enhancers": {
+      "none": "None",
+      "genetic": "Genetic Algorithm"
+    },
+    "features": "Features",
+    "supportCheck": "Support Check (Gravity)",
+    "weightBalance": "Weight Balance",
+    "stackingLimit": "Stacking Limits",
+    "constraints": "Constraints",
+    "respectDeliveryOrder": "Respect Delivery Order (LIFO)",
+    "keepGroupsTogether": "Keep Groups Together",
+    "enforceIncompatibility": "Enforce Group Incompatibility",
+    "performance": "Performance",
+    "timeBudget": "Time Budget (ms)",
+    "timeBudgetHint": "0 = no limit. Useful for genetic algorithm.",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
     "items": "Items",
+    "types": "types",
+    "total": "total",
     "add": "Add",
+    "noItems": "No items added",
+    "qty": "Qty",
+    "weight": "Weight",
+    "rotationType": "Rotation",
+    "rotationTypes": {
+      "all": "All",
+      "horizontal": "Horizontal Only",
+      "fixed": "Fixed"
+    },
+    "maxStackWeight": "Max Stack Weight",
+    "deliveryOrder": "Delivery Order",
+    "groupId": "Group ID",
+    "groupIdPlaceholder": "e.g., fragile, food",
+    "requiresFloor": "Must be on floor",
+    "onlinePacking": {
+      "title": "Online Packing",
+      "description": "Place items one at a time in real-time. Items are placed immediately without knowing future items.",
+      "noBins": "Please add at least one bin first.",
+      "start": "Start Online Packing",
+      "stop": "Stop",
+      "nextItem": "Next Item",
+      "placeItem": "Place Item",
+      "history": "History",
+      "noHistory": "No items placed yet"
+    },
     "pack": "Pack",
     "packing": "Packing...",
+    "autoPack": "Auto Pack",
+    "reset": "Reset",
     "results": "Results",
     "packed": "Packed",
     "unpacked": "Unpacked",
+    "rejected": "Rejected",
     "utilization": "Utilization",
     "binsUsed": "Bins Used",
     "clickToPack": "Click \"Pack\" to see results",
-    "qty": "Qty"
+    "selectExample": "Select example...",
+    "browseAllExamples": "Browse All Examples",
+    "examples": {
+      "categories": {
+        "quickStart": "Quick Start",
+        "basicPacking": "Basic Packing",
+        "constraints": "Constraints",
+        "realScenarios": "Real Scenarios"
+      },
+      "quickStart": {
+        "name": "Quick Start",
+        "description": "A simple example to get started. Multiple items in a single box."
+      },
+      "basicCubes": {
+        "name": "Basic Cubes",
+        "description": "Simple cube packing with three different item sizes."
+      },
+      "multiBin": {
+        "name": "Multi-Bin Selection",
+        "description": "Select optimal boxes for electronics with cost optimization."
+      },
+      "mixedSizes": {
+        "name": "Mixed Sizes",
+        "description": "Large, medium, and small items with support check enabled."
+      },
+      "weightConstraints": {
+        "name": "Weight Constraints",
+        "description": "Three heavy items exceeding the box weight limit."
+      },
+      "fragileItems": {
+        "name": "Fragile Items",
+        "description": "Items with max stack weight limits for fragile goods."
+      },
+      "rotationConstraints": {
+        "name": "Rotation Constraints",
+        "description": "Items with different rotation types: all, horizontal, fixed."
+      },
+      "groupConstraints": {
+        "name": "Group Constraints",
+        "description": "Food and chemicals that must be separated into different bins."
+      },
+      "supportRequirements": {
+        "name": "Support Requirements",
+        "description": "Items requiring floor placement or minimum support percentage."
+      },
+      "palletLoading": {
+        "name": "Pallet Loading",
+        "description": "Stack boxes on EUR1 pallet with layer building algorithm."
+      },
+      "container40ft": {
+        "name": "40ft Container (LIFO)",
+        "description": "Container loading with delivery order using wall building."
+      },
+      "ebAfit": {
+        "name": "EB-AFIT Algorithm",
+        "description": "Enhanced adaptive fit algorithm with time budget optimization."
+      },
+      "homogeneousItems": {
+        "name": "Homogeneous Items",
+        "description": "Identical boxes optimally arranged using layer building."
+      }
+    },
+    "welcome": {
+      "title": "Welcome to CrateFit Demo",
+      "subtitle": "Explore 3D bin packing algorithms interactively",
+      "tips": {
+        "title": "Quick Tips",
+        "autopack": "Auto-pack is enabled by default. Changes are applied instantly.",
+        "viewer": "Use mouse to rotate, scroll to zoom, right-click to pan the 3D view.",
+        "export": "Export your configuration as JSON or share via URL."
+      },
+      "selectExample": "Choose an example to get started",
+      "dontShowAgain": "Don't show this again",
+      "startExploring": "Start Exploring"
+    },
+    "comparison": {
+      "title": "Algorithm Comparison",
+      "runAll": "Run All Algorithms",
+      "running": "Running...",
+      "notRun": "Click Run to compare",
+      "randomBaseline": "Random baseline",
+      "vsBaseline": "vs baseline"
+    },
+    "instructions": {
+      "title": "Packing Instructions",
+      "preview": "Preview",
+      "summary": "Summary",
+      "dimensions": "Dimensions",
+      "items": "Items",
+      "layers": "Layers",
+      "layer": "Layer",
+      "step": "Step",
+      "groupByLayer": "Group by layer",
+      "includePositions": "Include positions",
+      "includeNotes": "Include notes",
+      "copy": "Copy",
+      "download": "Download",
+      "actions": {
+        "place": "Place",
+        "stack": "Stack on",
+        "rotate": "Rotate and place"
+      },
+      "orientations": {
+        "upright": "Upright",
+        "flat": "Flat",
+        "sideways": "Sideways"
+      }
+    },
+    "viewer": {
+      "edges": "Edges",
+      "grid": "Grid",
+      "cog": "Center of Gravity",
+      "explode": "Exploded View",
+      "autoRotate": "Auto Rotate",
+      "explodeDistance": "Explode Distance",
+      "layers": "Layer Filter",
+      "showAll": "Show All Layers",
+      "filterLayers": "Filter Layers",
+      "screenshot": "Screenshot",
+      "screenshotCopied": "Copied to clipboard",
+      "screenshotDownloaded": "Downloaded",
+      "resetView": "Reset View",
+      "opacity": "Opacity"
+    },
+    "hoverInfo": {
+      "dimensions": "Size",
+      "position": "Position"
+    },
+    "utility": {
+      "export": "Export",
+      "import": "Import",
+      "share": "Share",
+      "reset": "Reset",
+      "copied": "Copied!",
+      "copyShareUrl": "Copy the share URL:",
+      "resetTitle": "Reset Configuration",
+      "confirmReset": "Are you sure you want to reset all configuration to default? This action cannot be undone.",
+      "cancel": "Cancel"
+    }
   },
   "theme": {
     "light": "Light",

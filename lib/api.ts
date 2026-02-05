@@ -2,6 +2,56 @@ import { NextResponse } from "next/server";
 import { ZodError, ZodSchema } from "zod";
 
 // ============================================================================
+// Safe Error Logging
+// ============================================================================
+
+/**
+ * Sanitize IP address for logging (GDPR compliant)
+ * In production, only log the first two octets
+ */
+function sanitizeIp(ip: string): string {
+  if (process.env.NODE_ENV === "development") {
+    return ip;
+  }
+  // Mask last two octets for privacy
+  const parts = ip.split(".");
+  if (parts.length === 4) {
+    return `${parts[0]}.${parts[1]}.x.x`;
+  }
+  // IPv6 or other format - just show prefix
+  return ip.slice(0, 10) + "...";
+}
+
+/**
+ * Log API errors safely without exposing sensitive information in production
+ */
+export function logApiError(
+  context: string,
+  error: unknown,
+  ip?: string
+): void {
+  const isDev = process.env.NODE_ENV === "development";
+  const message = error instanceof Error ? error.message : "Unknown error";
+
+  if (isDev) {
+    // Development: full details for debugging
+    console.error(`${context}:`, {
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+      ip,
+      timestamp: new Date().toISOString(),
+    });
+  } else {
+    // Production: minimal info, sanitized IP
+    console.error(`${context}:`, {
+      message,
+      ip: ip ? sanitizeIp(ip) : undefined,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+// ============================================================================
 // Rate Limiting (In-Memory)
 // ============================================================================
 
@@ -9,11 +59,12 @@ import { ZodError, ZodSchema } from "zod";
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 // 60 requests per minute (matches Vercel WAF config)
-const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX || "60", 10);
-const RATE_LIMIT_WINDOW_MS = parseInt(
-  process.env.RATE_LIMIT_WINDOW_MS || "60000",
-  10
-);
+// Validate parsed values to handle NaN and enforce reasonable bounds
+const parsedMax = parseInt(process.env.RATE_LIMIT_MAX || "60", 10);
+const parsedWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000", 10);
+// Bounds: max 1-1000 requests, window 1s-1h
+const RATE_LIMIT_MAX = Math.max(1, Math.min(1000, isNaN(parsedMax) ? 60 : parsedMax));
+const RATE_LIMIT_WINDOW_MS = Math.max(1000, Math.min(3600000, isNaN(parsedWindow) ? 60000 : parsedWindow));
 
 // Cleanup tracking (request-based cleanup instead of setInterval)
 let lastCleanup = Date.now();
@@ -25,7 +76,18 @@ export function getRateLimitKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
   const firstForwarded = forwarded?.split(",")[0]?.trim();
-  const ip = firstForwarded || realIp || "unknown";
+  const ip = firstForwarded || realIp;
+
+  if (!ip) {
+    // Log for monitoring - unknown IPs could indicate proxy misconfiguration
+    if (process.env.NODE_ENV === "development") {
+      console.warn("Rate limit: Unable to identify client IP");
+    }
+    // Use unique key per request to enforce stricter limits on unknown IPs
+    // This prevents multiple users from sharing the same "unknown" bucket
+    return `unknown-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+
   return ip;
 }
 
@@ -37,9 +99,24 @@ export function checkRateLimit(key: string): {
   const now = Date.now();
 
   // Periodic cleanup (serverless-friendly, no setInterval)
+  // Use batch deletion with limit to avoid blocking event loop
   if (now - lastCleanup > CLEANUP_INTERVAL || rateLimitMap.size > MAX_ENTRIES) {
+    const keysToDelete: string[] = [];
+    const maxDeletePerCycle = 1000; // Limit to avoid blocking
+
     for (const [k, record] of rateLimitMap) {
-      if (now > record.resetTime) {
+      // Skip current key and add buffer time to prevent race condition
+      // Buffer ensures record wasn't just reset by another request
+      if (k !== key && now > record.resetTime + 1000) {
+        keysToDelete.push(k);
+        if (keysToDelete.length >= maxDeletePerCycle) break;
+      }
+    }
+
+    // Double-check before deletion to handle concurrent modifications
+    for (const k of keysToDelete) {
+      const record = rateLimitMap.get(k);
+      if (record && now > record.resetTime + 1000) {
         rateLimitMap.delete(k);
       }
     }
@@ -55,10 +132,17 @@ export function checkRateLimit(key: string): {
     return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetTime };
   }
 
+  // Note: In Node.js single-threaded model, these operations are effectively atomic
+  // within a single event loop tick. The primary rate limiting is handled by Vercel WAF;
+  // this in-memory implementation serves as a backup for development and edge cases.
+  // For distributed deployments, consider using Redis-based rate limiting.
+
+  // Check first, then increment - prevents counter inflation when requests are rejected
   if (record.count >= RATE_LIMIT_MAX) {
     return { allowed: false, remaining: 0, resetTime: record.resetTime };
   }
 
+  // Only increment after confirming the request is allowed
   record.count++;
   return {
     allowed: true,

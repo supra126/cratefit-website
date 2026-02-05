@@ -7,6 +7,7 @@ import {
   validationErrorResponse,
   successResponse,
   validateQuery,
+  logApiError,
 } from "@/lib/api";
 import { getSessionState } from "@/lib/online-sessions";
 import { stateQuerySchema } from "@/lib/schemas";
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       "X-RateLimit-Remaining": String(remaining),
     });
   } catch (error) {
-    console.error("Online pack state error:", error);
+    logApiError("Online pack state error", error, key);
     return errorResponse(
       error instanceof Error ? error.message : "Internal server error",
       500

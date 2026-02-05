@@ -126,11 +126,44 @@ type MDXComponentType = React.ComponentType<{
   components?: Record<string, React.ComponentType<React.HTMLAttributes<HTMLElement>>>;
 }>;
 
+// Maximum content length to prevent excessive compilation time
+// This is a safety measure, though content should only come from static files
+const MAX_CONTENT_LENGTH = 500000; // 500KB
+
+/**
+ * MDXContent - Client-side MDX compiler and renderer
+ *
+ * SECURITY WARNING: This component compiles MDX content on the CLIENT SIDE.
+ *
+ * ATTACK SURFACE:
+ * - MDX compilation can execute arbitrary JavaScript during render
+ * - Malicious MDX can access browser APIs (fetch, localStorage, cookies)
+ * - Code runs in the same origin as your application
+ *
+ * REQUIREMENTS - The content prop MUST only come from DEVELOPER-CONTROLLED sources:
+ * - Static MDX files in content/docs (checked into version control)
+ * - Pre-validated, sanitized CMS content (with strict allowlists)
+ *
+ * NEVER pass:
+ * - User-generated content (comments, posts, profiles)
+ * - External API responses (unless cryptographically signed)
+ * - URL parameters or query strings
+ *
+ * Current usage is SAFE: content comes from static files via lib/docs.ts
+ */
 export function MDXContent({ content }: MDXContentProps) {
   const [Content, setContent] = useState<MDXComponentType | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function compileMDX() {
+      // Safety check: reject excessively large content
+      if (content.length > MAX_CONTENT_LENGTH) {
+        console.error('MDX content too large:', content.length);
+        setError('Content too large to render');
+        return;
+      }
+
       try {
         const compiled = await compile(content, {
           outputFormat: 'function-body',
@@ -142,12 +175,22 @@ export function MDXContent({ content }: MDXContentProps) {
           baseUrl: import.meta.url,
         });
         setContent(() => MDXComponent);
-      } catch (error) {
-        console.error('MDX compilation error:', error);
+      } catch (err) {
+        console.error('MDX compilation error:', err);
+        setError('Failed to render content');
       }
     }
     compileMDX();
   }, [content]);
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+        <p className="font-semibold">Rendering Error</p>
+        <p className="text-sm">{error}</p>
+      </div>
+    );
+  }
 
   if (!Content) {
     return <div className="animate-pulse h-96 bg-muted rounded-lg" />;

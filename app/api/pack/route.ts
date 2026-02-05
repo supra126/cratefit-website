@@ -8,6 +8,7 @@ import {
   validationErrorResponse,
   successResponse,
   validateRequest,
+  logApiError,
 } from "@/lib/api";
 import { packRequestSchema } from "@/lib/schemas";
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
       "X-RateLimit-Reset": String(Math.ceil(resetTime / 1000)),
     });
   } catch (error) {
-    console.error("Pack API error:", error);
+    logApiError("Pack API error", error, key);
     return errorResponse(
       error instanceof Error ? error.message : "Internal server error",
       500

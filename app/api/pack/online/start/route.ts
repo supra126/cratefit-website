@@ -7,6 +7,7 @@ import {
   validationErrorResponse,
   successResponse,
   validateRequest,
+  logApiError,
 } from "@/lib/api";
 import { createSession, getSessionState } from "@/lib/online-sessions";
 import { startRequestSchema } from "@/lib/schemas";
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Online pack start error:", error);
+    logApiError("Online pack start error", error, key);
     return errorResponse(
       error instanceof Error ? error.message : "Internal server error",
       500

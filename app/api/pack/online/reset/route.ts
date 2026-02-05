@@ -7,8 +7,9 @@ import {
   validationErrorResponse,
   successResponse,
   validateRequest,
+  logApiError,
 } from "@/lib/api";
-import { getSession, getSessionState } from "@/lib/online-sessions";
+import { resetSession, getSessionState } from "@/lib/online-sessions";
 import { resetRequestSchema } from "@/lib/schemas";
 
 export async function POST(request: NextRequest) {
@@ -29,13 +30,18 @@ export async function POST(request: NextRequest) {
   const { sessionId } = validation.data;
 
   try {
-    const packer = getSession(sessionId);
-    if (!packer) {
+    // Reset the session (clears packer and re-adds the original bin)
+    const resetSuccess = resetSession(sessionId);
+    if (!resetSuccess) {
       return errorResponse("Session not found or expired", 404);
     }
 
-    packer.reset();
     const state = getSessionState(sessionId);
+
+    // Handle race condition where session expires during reset
+    if (!state) {
+      return errorResponse("Session expired during reset", 404);
+    }
 
     return successResponse(
       {
@@ -47,7 +53,7 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("Online pack reset error:", error);
+    logApiError("Online pack reset error", error, key);
     return errorResponse(
       error instanceof Error ? error.message : "Internal server error",
       500

@@ -5,6 +5,10 @@ import { locales, defaultLocale, type Locale } from "@/i18n/config";
 
 const contentDirectory = path.join(process.cwd(), "content/docs");
 
+// Maximum content size for documentation files (500KB)
+// This is a defense-in-depth measure to catch accidentally large files early
+const MAX_DOC_SIZE = 500000;
+
 // Sanitize slug segments to prevent path traversal attacks
 function sanitizeSlugSegment(segment: string): string {
   // Only allow alphanumeric, hyphens, and underscores
@@ -64,6 +68,13 @@ export function getDocBySlug(slug: string[], locale: string): Doc | null {
   }
 
   const fileContents = fs.readFileSync(filePath, "utf8");
+
+  // Server-side size check - fail fast before sending large content to client
+  if (fileContents.length > MAX_DOC_SIZE) {
+    console.error(`Documentation file too large (${fileContents.length} bytes): ${filePath}`);
+    return null;
+  }
+
   const { data, content } = matter(fileContents);
 
   return {
